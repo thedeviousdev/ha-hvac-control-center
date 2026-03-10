@@ -20,7 +20,6 @@ from .config_flow import (
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
 MAIN_UNIT_TOGGLE = "input_boolean.hvac_main_unit_turn_on"
 MAIN_MODE = "input_select.hvac_main_unit_set_mode"
 
