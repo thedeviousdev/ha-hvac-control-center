@@ -361,6 +361,49 @@ input_select.hvac_main_unit_set_mode
 
 ---
 
+## HVAC Control Plugin (no YAML scripts)
+
+All HVAC logic lives in the **HVAC Control** plugin. There are no HVAC scripts in `scripts.yaml`; automations call the integration's services instead.
+
+### What it is
+- **Custom integration** (`custom_components/hvac_control`): Python code that implements damper, temperature, batch, sync, diagnose, set-all, and config. Exposes services under the `hvac_control` domain. Stores room list, spill zones, and tolerances in the config entry (no `configuration.yaml` required).
+- **Custom panel**: Served from the integration at `/hac_static/hvac_control/hvac-panel.js`. Reads config from `sensor.hvac_control_config` and saves via `hvac_control.set_config`. No dashboard cards required.
+
+### Install
+
+**Option A – HACS (easiest)**  
+1. Install [HACS](https://hacs.xyz) if you haven’t already.  
+2. Push this repo to GitHub (or use your existing fork).  
+3. In Home Assistant: **HACS → Integrations → ⋮ (top right) → Custom repositories**.  
+4. Add your repo URL (e.g. `https://github.com/yourusername/ha-hvac-control-center`), set **Category** to **Integration**, then **Add**.  
+5. In **HACS → Integrations**, search for **HVAC Control**, then **Download**.  
+6. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control**.
+
+**Option B – Manual**  
+1. Copy the whole **`custom_components/hvac_control/`** folder (including **`frontend/`**) into your Home Assistant **config** directory.  
+2. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control**.  
+3. The **HVAC** entry appears in the sidebar (thermostat icon). No `panel_custom`, `input_text`, or `input_number` entries are needed in `configuration.yaml`.
+
+### Configurable in the panel
+- **Rooms**: Editable room list and spill zone list (comma-separated). Saved via `hvac_control.set_config` (stored in the integration config entry).
+- **Tolerances**: Temp dead band (°C) and sync tolerance (°C), also saved via `set_config`. Defaults: 0.5°C and 0.1°C. Damper open/closed (90%/10%) are fixed in the integration.
+
+### Integration services (`hvac_control` domain)
+| Service | Parameters | Description |
+|--------|------------|-------------|
+| `process_room_damper` | `room_name` | Run damper logic for one room (open/close by spill zone, toggle, climate). |
+| `process_room_temperature` | `room_name` | Run temperature logic for one room (turn climate on/off by dead band, mode, toggle). |
+| `process_all_rooms` | — | Run temperature logic for all rooms with toggle ON. |
+| `process_all_dampers` | — | Run damper logic for all rooms. |
+| `sync_helper_to_climate` | `target_temp_entity`, `climate_entity`, `room_name` (optional) | Set climate temperature from the target helper. |
+| `sync_climate_to_helper` | `climate_entity`, `target_helper` | Set helper from climate (only if diff > sync tolerance). |
+| `diagnose_kitchen` | — | Log kitchen state to logbook. |
+| `set_all_rooms_target_temperature` | `temperature` | Set all rooms' target temp helper to the given value. |
+| `handle_boost` | `room` | Called when a room's boost toggle changes. |
+| `set_config` | `room_list`, `spill_zones`, `temp_dead_band`, `sync_tolerance` (all optional) | Update integration config (rooms, spill zones, tolerances). Panel uses this to save settings. |
+
+---
+
 ## Future Enhancements
 
 ### Potential Additions
@@ -383,4 +426,4 @@ You're building a **smart HVAC coordinator** that:
 
 **The goal**: Make your physical HVAC system operate intelligently while maintaining system integrity and user control.
 
-**Current status**: ~95% functional, troubleshooting kitchen auto-on issue
+**Current status**: HVAC logic moved into the HVAC Control plugin (custom integration + sidebar panel). No YAML scripts; automations call `hvac_control.*` services.
