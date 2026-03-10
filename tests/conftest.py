@@ -15,13 +15,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.hvac_control_center.const import DOMAIN
 from custom_components.hvac_control_center.config_flow import (
     DEFAULT_ROOMS,
     DEFAULT_SPILL,
     DEFAULT_SYNC_TOLERANCE,
     DEFAULT_TEMP_DEAD_BAND,
 )
+from custom_components.hvac_control_center.const import DOMAIN
 
 
 @pytest.fixture(autouse=True)
