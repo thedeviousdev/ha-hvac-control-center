@@ -384,6 +384,36 @@ hvac_sync_helper_to_climate:
   mode: restart
 
 # ============================================================================
+# DIAGNOSTIC SCRIPTS
+# ============================================================================
+hvac_diagnose_kitchen:
+  alias: HVAC - Diagnose Kitchen
+  description: Diagnostic script to identify what's triggering kitchen climate
+  sequence:
+  - variables:
+      climate_state: '{{ states("climate.kitchen") }}'
+      toggle_state: '{{ states("input_boolean.hvac_toggle_kitchen") }}'
+      damper_position: '{{ state_attr("cover.kitchen_damper", "current_position") | int(0) }}'
+      main_unit_on: '{{ is_state("input_boolean.hvac_main_unit_turn_on", "on") }}'
+      current_temp: '{{ state_attr("climate.kitchen", "current_temperature") | float(0) }}'
+      target_temp: '{{ states("input_number.hvac_set_target_temperature_kitchen") | float(0) }}'
+      system_mode: '{{ states("input_select.hvac_main_unit_set_mode") }}'
+      expected_behavior: >
+        {% if toggle_state == 'off' %}
+          Climate should be OFF (toggle is off)
+        {% else %}
+          Climate may run if temp needs adjustment ({{ system_mode }} mode)
+        {% endif %}
+  - action: logbook.log
+    data:
+      name: HVAC - Kitchen Diagnostic
+      message: >
+        Climate: {{ climate_state }} | Toggle: {{ toggle_state }} | Damper: {{ damper_position }}%
+        | Main: {{ main_unit_on }} | Temp: {{ current_temp }}°C / {{ target_temp }}°C
+        | Expected: {{ expected_behavior }}
+  mode: single
+
+# ============================================================================
 # UTILITY SCRIPTS
 # ============================================================================
 hvac_all_rooms_set_same_target_temperature:

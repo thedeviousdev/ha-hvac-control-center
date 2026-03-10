@@ -132,7 +132,9 @@ Bidirectional sync scripts:
 ## Design Principles
 
 ### 1. **Toggle is King**
-If toggle is OFF, climate should NEVER run (except spill zone damper can be open)
+- The toggle is user-controlled only—the system must NEVER turn it off when climate turns off
+- Toggle = "monitor and control this room" (dampers, climate on/off). It persists as the user set it
+- If toggle is OFF, climate should NEVER run (except spill zone damper can be open)
 
 ### 2. **Spill Zone Exception**
 Kitchen damper can be open even with toggle OFF (for pressure balancing)

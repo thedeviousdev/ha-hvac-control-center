@@ -182,13 +182,10 @@
   conditions: []
   actions:
   - variables:
-      room_name: '{% set parts = trigger.entity_id.split(''.'')[1] %} {{ parts.replace(''hvac_toggle_'',
-        '''') }}
-
-        '
-      climate_entity: climate.{{ room_name }}
-      toggle_entity: input_boolean.hvac_toggle_{{ room_name }}
-      damper_entity: cover.{{ room_name }}_damper
+      room_name: "{{ trigger.entity_id.split('.')[1].replace('hvac_toggle_', '') }}"
+      climate_entity: "climate.{{ room_name }}"
+      toggle_entity: "input_boolean.hvac_toggle_{{ room_name }}"
+      damper_entity: "cover.{{ room_name }}_damper"
   - action: script.hvac_room_set_damper
     data:
       room_name: '{{ room_name }}'
@@ -567,7 +564,7 @@
         target:
           entity_id: input_boolean.hvac_main_unit_turn_on
   mode: restart
-- id: hvac_boost_automation
+ id: hvac_boost_automation
   alias: HVAC - All Rooms - Toggle Boost
   description: Automatically sets climate preset mode when boost helpers are toggled
   triggers:
