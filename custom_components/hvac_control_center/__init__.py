@@ -33,6 +33,11 @@ PANEL_MODULE_URL = "/hac_static/hvac_control_center/hvac-panel.js"
 FRONTEND_DIR = "frontend"
 
 
+async def _async_noop_update() -> dict[str, Any]:
+    """Trivial coordinator update to satisfy Home Assistant's expectations."""
+    return {}
+
+
 def _get_options(hass: HomeAssistant) -> dict[str, Any]:
     """Get current options from the config entry."""
     if DOMAIN not in hass.data:
@@ -385,7 +390,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         hass,
         _LOGGER,
         name=DOMAIN,
-        update_method=lambda: None,
+        update_method=_async_noop_update,
     )
     await coordinator.async_config_entry_first_refresh()
 

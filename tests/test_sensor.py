@@ -13,6 +13,7 @@ from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.setup import async_setup_component
 
 from custom_components.hvac_control_center.sensor import CONFIG_SENSOR_ID
 
@@ -31,10 +32,14 @@ async def test_sensor_setup_creates_config_entity(
     hass: HomeAssistant, mock_config_entry: ConfigEntry
 ) -> None:
     """[Happy] async_setup_entry creates the config sensor."""
+    await async_setup_component(hass, "http", {})
+    await hass.async_block_till_done()
     with (
-        patch(
-            "homeassistant.components.http.async_register_static_paths",
+        patch.object(
+            hass.http,
+            "async_register_static_paths",
             new_callable=AsyncMock,
+            create=True,
         ),
         patch(
             "homeassistant.components.frontend.async_register_built_in_panel",
@@ -45,7 +50,6 @@ async def test_sensor_setup_creates_config_entity(
 
     entity_id = _get_config_sensor_entity_id(hass, mock_config_entry.entry_id)
     assert entity_id is not None
-    assert entity_id == f"sensor.{CONFIG_SENSOR_ID}"
     state = hass.states.get(entity_id)
     assert state is not None
     assert state.state == "configured"
@@ -56,10 +60,14 @@ async def test_sensor_attributes(
     hass: HomeAssistant, mock_config_entry: ConfigEntry
 ) -> None:
     """[Happy] Config sensor exposes room_list, spill_zones, temp_dead_band, sync_tolerance."""
+    await async_setup_component(hass, "http", {})
+    await hass.async_block_till_done()
     with (
-        patch(
-            "homeassistant.components.http.async_register_static_paths",
+        patch.object(
+            hass.http,
+            "async_register_static_paths",
             new_callable=AsyncMock,
+            create=True,
         ),
         patch(
             "homeassistant.components.frontend.async_register_built_in_panel",

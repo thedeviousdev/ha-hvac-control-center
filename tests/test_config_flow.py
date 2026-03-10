@@ -92,7 +92,6 @@ async def test_options_flow_show_form(
     hass: HomeAssistant, mock_config_entry: config_entries.ConfigEntry
 ) -> None:
     """[Happy] Options flow shows form with current options."""
-    mock_config_entry.add_to_hass(hass)
     opts_result = await hass.config_entries.options.async_init(
         mock_config_entry.entry_id
     )
@@ -112,7 +111,6 @@ async def test_options_flow_update_options(
     hass: HomeAssistant, mock_config_entry: config_entries.ConfigEntry
 ) -> None:
     """[Happy] Options flow submit updates entry options."""
-    mock_config_entry.add_to_hass(hass)
     opts_result = await hass.config_entries.options.async_init(
         mock_config_entry.entry_id
     )

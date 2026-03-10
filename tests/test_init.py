@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
 
 from custom_components.hvac_control_center import DOMAIN
 
@@ -20,10 +21,14 @@ async def test_setup_and_unload_entry(
     hass: HomeAssistant, mock_config_entry: ConfigEntry
 ) -> None:
     """[Happy] Setting up and unloading a config entry via the core config entries interface."""
+    await async_setup_component(hass, "http", {})
+    await hass.async_block_till_done()
     with (
-        patch(
-            "homeassistant.components.http.async_register_static_paths",
+        patch.object(
+            hass.http,
+            "async_register_static_paths",
             new_callable=AsyncMock,
+            create=True,
         ),
         patch(
             "homeassistant.components.frontend.async_register_built_in_panel",
@@ -68,25 +73,36 @@ async def test_unload_when_not_loaded_succeeds(hass: HomeAssistant) -> None:
 
 
 @pytest.mark.asyncio
-async def test_setup_with_empty_options_sets_defaults(
-    hass: HomeAssistant, mock_config_entry: ConfigEntry
-) -> None:
+async def test_setup_with_empty_options_sets_defaults(hass: HomeAssistant) -> None:
     """[Happy] Setup with empty options updates entry with default options."""
-    mock_config_entry.options = {}
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="HVAC Control Center",
+        data={},
+        options={},
+        entry_id="test_entry_empty_options",
+    )
+    entry.add_to_hass(hass)
+    await async_setup_component(hass, "http", {})
+    await hass.async_block_till_done()
     with (
-        patch(
-            "homeassistant.components.http.async_register_static_paths",
+        patch.object(
+            hass.http,
+            "async_register_static_paths",
             new_callable=AsyncMock,
+            create=True,
         ),
         patch(
             "homeassistant.components.frontend.async_register_built_in_panel",
         ),
     ):
-        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    entry = hass.config_entries.async_get_entry(mock_config_entry.entry_id)
-    assert entry is not None
-    assert entry.options.get("room_list")
-    assert entry.options.get("spill_zones") == "kitchen"
-    assert entry.options.get("temp_dead_band") == 0.5
-    assert entry.options.get("sync_tolerance") == 0.1
+    loaded = hass.config_entries.async_get_entry(entry.entry_id)
+    assert loaded is not None
+    assert loaded.options.get("room_list")
+    assert loaded.options.get("spill_zones") == "kitchen"
+    assert loaded.options.get("temp_dead_band") == 0.5
+    assert loaded.options.get("sync_tolerance") == 0.1
