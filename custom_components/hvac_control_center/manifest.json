@@ -1,8 +1,11 @@
 {
   "domain": "hvac_control_center",
   "name": "HVAC Control Center",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "codeowners": [],
   "config_flow": true,
-  "dependencies": ["frontend", "http"]
+  "dependencies": [
+    "frontend",
+    "http"
+  ]
 }
