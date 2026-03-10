@@ -1,0 +1,36 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+    input_number:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+
+logger:
+  logs:
+    custom_components.energy_window_tracker: info
+
+google_assistant:
+  project_id: sam-ha-0011fe
+  service_account: !include SERVICE_ACCOUNT.json
+  report_state: true
+
+input_text:
+  hvac_room_list:
+    name: "HVAC - Room List"
+    initial: >
+      bathroom,guest,hobby,kitchen,lounge_kitch,lounge_yard,master,office
+  hvac_spill_zone_list:
+    name: "HVAC - Spill Zone List"
+    initial: >
+      kitchen

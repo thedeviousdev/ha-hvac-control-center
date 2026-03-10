@@ -1,0 +1,591 @@
+- id: '1753523667581'
+  alias: Door open
+  description: ''
+  triggers:
+  - type: opened
+    device_id: e6f915cc3ad048dd25cfce66b0eb028c
+    entity_id: e8094112891f9c772bb9d55c607657d4
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  - type: opened
+    device_id: 0cc500449f7f65d7388eac9412e1abdd
+    entity_id: ea84294a1fec944e81bb5f11bdc6c9af
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  - type: opened
+    device_id: 389bea341ad2eec88941562d672085e0
+    entity_id: 1e4e38fdf99851b041d4b24e628f5173
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  conditions: []
+  actions:
+  - device_id: 4161ff2d530072d52a23cd942bc67b13
+    domain: select
+    entity_id: e86054a5a499788a0f6492668f340919
+    type: select_option
+    option: Alarm 3
+  - action: siren.turn_on
+    metadata: {}
+    data:
+      volume_level: 1
+    target:
+      device_id: 4161ff2d530072d52a23cd942bc67b13
+  mode: single
+- id: '1753523723372'
+  alias: Door close
+  description: ''
+  triggers:
+  - type: not_opened
+    device_id: 389bea341ad2eec88941562d672085e0
+    entity_id: 1e4e38fdf99851b041d4b24e628f5173
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  - type: not_opened
+    device_id: e6f915cc3ad048dd25cfce66b0eb028c
+    entity_id: e8094112891f9c772bb9d55c607657d4
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  - type: not_opened
+    device_id: 0cc500449f7f65d7388eac9412e1abdd
+    entity_id: ea84294a1fec944e81bb5f11bdc6c9af
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  conditions: []
+  actions:
+  - action: siren.turn_off
+    metadata: {}
+    data: {}
+    target:
+      device_id: 4161ff2d530072d52a23cd942bc67b13
+  mode: single
+- id: '1753523804284'
+  alias: Sun flowers
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunrise
+    offset: 0
+  conditions: []
+  actions:
+  - type: turn_on
+    device_id: 28c1295d2f9d3c2d4018d0b9fdaf3dcc
+    entity_id: 43e96452e7c1240fc75926cff90a7cc8
+    domain: switch
+  mode: single
+- id: '1753523839962'
+  alias: Sunset flowers
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: 0
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: 28c1295d2f9d3c2d4018d0b9fdaf3dcc
+    entity_id: 43e96452e7c1240fc75926cff90a7cc8
+    domain: switch
+  mode: single
+- id: '1761295803431'
+  alias: Freezer open
+  description: ''
+  triggers:
+  - type: opened
+    device_id: 7fbffb8e578115b256a8adb4115580b4
+    entity_id: fe58b24c61964e490b55f74adedcf5e1
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  conditions: []
+  actions:
+  - device_id: 4161ff2d530072d52a23cd942bc67b13
+    domain: select
+    entity_id: e86054a5a499788a0f6492668f340919
+    type: select_option
+    option: Alarm 3
+  - action: siren.turn_on
+    metadata: {}
+    data:
+      volume_level: 1
+    target:
+      device_id: 4161ff2d530072d52a23cd942bc67b13
+  mode: single
+- id: '1761295882596'
+  alias: Freezer Close
+  description: ''
+  triggers:
+  - type: not_opened
+    device_id: 7fbffb8e578115b256a8adb4115580b4
+    entity_id: fe58b24c61964e490b55f74adedcf5e1
+    domain: binary_sensor
+    trigger: device
+  conditions: []
+  actions:
+  - action: siren.turn_off
+    metadata: {}
+    data: {}
+    target:
+      device_id: 4161ff2d530072d52a23cd942bc67b13
+  mode: single
+- id: '1769231888532'
+  alias: HVAC - Sync - All Rooms - Dampers
+  description: Synchronize dampers for all rooms when HVAC toggle or climate device
+    state changes
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.hvac_toggle_bathroom
+    - input_boolean.hvac_toggle_guest
+    - input_boolean.hvac_toggle_hobby
+    - input_boolean.hvac_toggle_kitchen
+    - input_boolean.hvac_toggle_lounge_kitch
+    - input_boolean.hvac_toggle_lounge_yard
+    - input_boolean.hvac_toggle_master
+    - input_boolean.hvac_toggle_office
+  - trigger: state
+    entity_id:
+    - climate.bathroom
+    - climate.guest
+    - climate.hobby
+    - climate.kitchen
+    - climate.lounge_kitch
+    - climate.lounge_yard
+    - climate.master
+    - climate.office
+  conditions: []
+  actions:
+  - variables:
+      room_name: '{% set parts = trigger.entity_id.split(''.'')[1] %} {{ parts.replace(''hvac_toggle_'',
+        '''') }}
+
+        '
+      climate_entity: climate.{{ room_name }}
+      toggle_entity: input_boolean.hvac_toggle_{{ room_name }}
+      damper_entity: cover.{{ room_name }}_damper
+  - action: script.hvac_room_set_damper
+    data:
+      room_name: '{{ room_name }}'
+      damper_entity: '{{ damper_entity }}'
+      climate_entity: '{{ climate_entity }}'
+      toggle_entity: '{{ toggle_entity }}'
+  mode: restart
+- id: '1769235425342'
+  alias: HVAC - All Rooms - Set Mode
+  description: Monitor room changes and trigger temperature control
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.hvac_toggle_bathroom
+    - input_boolean.hvac_toggle_guest
+    - input_boolean.hvac_toggle_hobby
+    - input_boolean.hvac_toggle_kitchen
+    - input_boolean.hvac_toggle_lounge_kitch
+    - input_boolean.hvac_toggle_lounge_yard
+    - input_boolean.hvac_toggle_master
+    - input_boolean.hvac_toggle_office
+  - trigger: state
+    entity_id:
+    - climate.bathroom
+    - climate.guest
+    - climate.hobby
+    - climate.kitchen
+    - climate.lounge_kitch
+    - climate.lounge_yard
+    - climate.master
+    - climate.office
+    attribute: current_temperature
+    for:
+      seconds: 2
+  - trigger: state
+    entity_id:
+    - input_number.hvac_set_target_temperature_bathroom
+    - input_number.hvac_set_target_temperature_guest
+    - input_number.hvac_set_target_temperature_hobby
+    - input_number.hvac_set_target_temperature_kitchen
+    - input_number.hvac_set_target_temperature_lounge_kitch
+    - input_number.hvac_set_target_temperature_lounge_yard
+    - input_number.hvac_set_target_temperature_master
+    - input_number.hvac_set_target_temperature_office
+    for:
+      seconds: 2
+  - trigger: state
+    entity_id: input_boolean.hvac_main_unit_turn_on
+    for:
+      seconds: 2
+  conditions: []
+  actions:
+  - action: script.hvac_process_all_rooms
+  mode: restart
+- id: '1769235450920'
+  alias: HVAC - All Rooms - Set Temperature
+  description: When helper temperature changes, update climate device
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_number.hvac_set_target_temperature_bathroom
+    - input_number.hvac_set_target_temperature_guest
+    - input_number.hvac_set_target_temperature_hobby
+    - input_number.hvac_set_target_temperature_kitchen
+    - input_number.hvac_set_target_temperature_lounge_kitch
+    - input_number.hvac_set_target_temperature_lounge_yard
+    - input_number.hvac_set_target_temperature_master
+    - input_number.hvac_set_target_temperature_office
+  conditions: []
+  actions:
+  - variables:
+      room_name: '{{ trigger.entity_id.split(''.'')[1].replace(''hvac_set_target_temperature_'',
+        '''') }}'
+      climate_entity: climate.{{ room_name }}
+  - action: script.hvac_sync_helper_to_climate
+    data:
+      target_temp_entity: '{{ trigger.entity_id }}'
+      climate_entity: '{{ climate_entity }}'
+      room_name: '{{ room_name | title }}'
+  mode: restart
+- id: '1769235488890'
+  alias: HVAC - Sync - All Rooms - Target Temperature
+  description: When climate device temperature changes, update helper (with tolerance
+    to prevent loops)
+  triggers:
+  - trigger: state
+    entity_id:
+    - climate.lounge_kitch
+    - climate.lounge_yard
+    - climate.kitchen
+    - climate.bathroom
+    - climate.master
+    - climate.guest
+    - climate.hobby
+    - climate.office
+    attribute: temperature
+  conditions:
+  - condition: template
+    value_template: '{% set room_name = trigger.entity_id.split(''.'')[1] %} {% set
+      helper = ''input_number.hvac_set_target_temperature_'' + room_name %} {% set
+      climate_temp = state_attr(trigger.entity_id, ''temperature'') | float(0) %}
+      {% set helper_temp = states(helper) | float(0) %} {{ (climate_temp - helper_temp)
+      | abs > 0.1 }}
+
+      '
+  actions:
+  - variables:
+      room_name: '{{ trigger.entity_id.split(''.'')[1] }}'
+      target_helper: input_number.hvac_set_target_temperature_{{ room_name }}
+  - action: script.hvac_sync_climate_to_helper
+    data:
+      climate_entity: '{{ trigger.entity_id }}'
+      target_helper: '{{ target_helper }}'
+  mode: queued
+  max: 10
+- id: '1769235627215'
+  alias: HVAC - All Rooms - Auto-Off When Toggle Disabled
+  description: Turn off room HVAC when toggle is disabled
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.hvac_toggle_lounge_kitch
+    - input_boolean.hvac_toggle_lounge_yard
+    - input_boolean.hvac_toggle_kitchen
+    - input_boolean.hvac_toggle_bathroom
+    - input_boolean.hvac_toggle_master
+    - input_boolean.hvac_toggle_guest
+    - input_boolean.hvac_toggle_hobby
+    - input_boolean.hvac_toggle_office
+    to: 'off'
+    for:
+      seconds: 2
+  conditions: []
+  actions:
+  - variables:
+      room_name: '{{ trigger.entity_id.split(''.'')[1].replace(''hvac_toggle_'', '''')
+        }}'
+      climate_entity: climate.{{ room_name }}
+  - action: climate.set_hvac_mode
+    target:
+      entity_id: '{{ climate_entity }}'
+    data:
+      hvac_mode: 'off'
+  mode: single
+- id: '1769235599000'
+  alias: HVAC - Main Unit - Auto Control
+  description: Automatically turn main unit on/off based on room status
+  triggers:
+  - trigger: state
+    entity_id:
+    - climate.lounge_kitch
+    - climate.lounge_yard
+    - climate.kitchen
+    - climate.bathroom
+    - climate.master
+    - climate.guest
+    - climate.hobby
+    - climate.office
+    for:
+      seconds: 2
+  conditions: []
+  actions:
+  - variables:
+      all_off: "{{ is_state('climate.lounge_kitch', 'off')\n   and is_state('climate.lounge_yard',
+        'off')\n   and is_state('climate.kitchen', 'off')\n   and is_state('climate.bathroom',
+        'off')\n   and is_state('climate.master', 'off')\n   and is_state('climate.guest',
+        'off')\n   and is_state('climate.hobby', 'off')\n   and is_state('climate.office',
+        'off') }}\n"
+      any_running: "{{ states.climate \n   | selectattr('entity_id', 'in', ['climate.lounge_kitch',
+        'climate.lounge_yard', \n                                    'climate.kitchen',
+        'climate.bathroom', \n                                    'climate.master',
+        'climate.guest', \n                                    'climate.hobby', 'climate.office'])\n
+        \  | selectattr('state', 'eq', 'fan_only')\n   | list | count > 0 }}\n"
+      main_unit_state: '{{ states("climate.hvac") }}'
+  - choose:
+    - conditions:
+      - '{{ any_running and main_unit_state == "off" }}'
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.hvac_main_unit_turn_on
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.hvac
+        data:
+          hvac_mode: '{{ states("input_select.hvac_main_unit_set_mode") | lower }}'
+      - action: logbook.log
+        data:
+          name: HVAC Automation
+          message: Main unit turned on - room(s) activated
+    - conditions:
+      - '{{ all_off and main_unit_state != "off" }}'
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.hvac
+        data:
+          hvac_mode: 'off'
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hvac_main_unit_turn_on
+      - action: logbook.log
+        data:
+          name: HVAC Automation
+          message: Main unit turned off - all rooms off
+  mode: restart
+- id: '1769235656144'
+  alias: HVAC - Main Unit - Set Mode
+  description: Update main HVAC mode when helper changes
+  triggers:
+  - trigger: state
+    entity_id: input_select.hvac_main_unit_set_mode
+    for:
+      seconds: 2
+  conditions:
+  - condition: state
+    entity_id: input_boolean.hvac_main_unit_turn_on
+    state: 'on'
+  - condition: template
+    value_template: '{{ states(''input_select.hvac_main_unit_set_mode'') | lower !=
+      states(''climate.hvac'') }}'
+  actions:
+  - action: climate.set_hvac_mode
+    target:
+      entity_id: climate.hvac
+    data:
+      hvac_mode: '{{ states(''input_select.hvac_main_unit_set_mode'') | lower }}'
+  - action: logbook.log
+    data:
+      name: HVAC Automation
+      message: Main HVAC mode changed to {{ states('input_select.hvac_main_unit_set_mode')
+        }}
+  mode: single
+- id: '1769235681477'
+  alias: HVAC - Sync - Main Unit - Mode
+  description: Update helper when main HVAC mode changes to a non-off state
+  triggers:
+  - trigger: state
+    entity_id:
+    - climate.hvac
+    attribute: hvac_mode
+  conditions:
+  - condition: template
+    value_template: '{{ states(''climate.hvac'') != ''off'' }}'
+  - condition: template
+    value_template: '{{ states(''climate.hvac'') != states(''input_select.hvac_main_unit_set_mode'')
+      | lower }}'
+  actions:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.hvac_main_unit_set_mode
+    data:
+      option: '{{ states(''climate.hvac'') }}'
+  - action: logbook.log
+    data:
+      name: HVAC Automation
+      message: Mode preference updated to {{ states('climate.hvac') }}
+  mode: restart
+- id: '1769235702344'
+  alias: HVAC - Main Unit - Set Fan
+  description: Update main HVAC fan when helper changes
+  triggers:
+  - trigger: state
+    entity_id: input_select.hvac_main_unit_set_fan
+    for:
+      seconds: 2
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_select.hvac_main_unit_set_fan'') != state_attr(''climate.hvac'',
+      ''fan_mode'') }}'
+  actions:
+  - action: climate.set_fan_mode
+    target:
+      entity_id: climate.hvac
+    data:
+      fan_mode: '{{ states(''input_select.hvac_main_unit_set_fan'') }}'
+  mode: single
+- id: '1769235723910'
+  alias: HVAC - Sync - Main Unit - Fan
+  description: Update helper when main HVAC fan changes
+  triggers:
+  - trigger: state
+    entity_id: climate.hvac
+    attribute: fan_mode
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_select.hvac_main_unit_set_fan'') != state_attr(''climate.hvac'',
+      ''fan_mode'') }}'
+  actions:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.hvac_main_unit_set_fan
+    data:
+      option: '{{ state_attr(''climate.hvac'', ''fan_mode'') }}'
+  mode: restart
+- id: '1769315209464'
+  alias: HVAC - Main Unit - Set on/off
+  description: Turn main HVAC on/off when the turn_on helper changes
+  triggers:
+  - trigger: state
+    entity_id: input_boolean.hvac_main_unit_turn_on
+    for:
+      seconds: 2
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.hvac_main_unit_turn_on
+        state: 'on'
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.hvac
+        data:
+          hvac_mode: '{{ states(''input_select.hvac_main_unit_set_mode'') | lower
+            }}'
+      - action: logbook.log
+        data:
+          name: HVAC Automation
+          message: Main HVAC unit turned on - mode set to {{ states('input_select.hvac_main_unit_set_mode')
+            }}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.hvac_main_unit_turn_on
+        state: 'off'
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.hvac
+        data:
+          hvac_mode: 'off'
+      - variables:
+          rooms: '{{ states(''input_text.hvac_room_list'').split('','') }}'
+      - repeat:
+          for_each: '{{ rooms }}'
+          sequence:
+          - variables:
+              room: '{{ repeat.item | trim }}'
+              damper_entity: cover.{{ room }}_damper
+          - action: cover.set_cover_position
+            target:
+              entity_id: '{{ damper_entity }}'
+            data:
+              position: 0
+      - action: logbook.log
+        data:
+          name: HVAC Automation
+          message: Main HVAC unit turned off - all dampers closed
+  mode: restart
+- id: '1769315362293'
+  alias: HVAC - Sync - Main Unit to Turn On Helper
+  description: Update turn_on helper when main HVAC state changes externally
+  triggers:
+  - trigger: state
+    entity_id: climate.hvac
+  conditions:
+  - condition: template
+    value_template: "{{ (states('climate.hvac') == 'off' and is_state('input_boolean.hvac_main_unit_turn_on',
+      'on'))\n    or (states('climate.hvac') != 'off' and is_state('input_boolean.hvac_main_unit_turn_on',
+      'off')) }}\n"
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ states(''climate.hvac'') != ''off'' }}'
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.hvac_main_unit_turn_on
+    - conditions:
+      - condition: template
+        value_template: '{{ states(''climate.hvac'') == ''off'' }}'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hvac_main_unit_turn_on
+  mode: restart
+- id: hvac_boost_automation
+  alias: HVAC - All Rooms - Toggle Boost
+  description: Automatically sets climate preset mode when boost helpers are toggled
+  triggers:
+  - entity_id:
+    - input_boolean.hvac_boost_bathroom
+    - input_boolean.hvac_boost_guest
+    - input_boolean.hvac_boost_hobby
+    - input_boolean.hvac_boost_kitchen
+    - input_boolean.hvac_boost_lounge_kitch
+    - input_boolean.hvac_boost_lounge_yard
+    - input_boolean.hvac_boost_master
+    - input_boolean.hvac_boost_office
+    trigger: state
+  actions:
+  - variables:
+      room_name: '{{ trigger.entity_id.split(''.'')[1].replace(''hvac_boost_'', '''')
+        }}'
+  - data:
+      room: '{{ room_name }}'
+    action: script.hvac_toggle_boost
+  mode: queued

@@ -1,0 +1,411 @@
+start_work:
+  sequence:
+  - type: turn_on
+    device_id: 55f9928a61cc6c92d64b9b9a679a7d82
+    entity_id: 314d057fe6c60e881e9c2a0990b71ba0
+    domain: switch
+  alias: 'Start Work '
+  description: ''
+go_to_bed_2:
+  alias: Go to bed
+  description: Turn off lights and switches for bedtime
+  sequence:
+  - action: light.turn_off
+    data: {}
+    target:
+      entity_id: light.bed
+  - action: switch.turn_off
+    target:
+      entity_id:
+      - switch.flowers
+      - switch.computer
+      - switch.wiz_socket_aa5f79
+  mode: single
+  icon: mdi:bed
+
+# ============================================================================
+# CENTRALIZED ROOM CONFIGURATION
+# ============================================================================
+hvac_get_room_config:
+  alias: HVAC - Get Room Configuration
+  description: Returns configuration for a room based on any room-related entity
+  fields:
+    entity_id:
+      description: Any room-related entity ID
+      example: climate.bathroom or input_boolean.hvac_toggle_bathroom
+  sequence:
+  - variables:
+      # Extract room name from entity_id
+      room_name: >
+        {% set parts = entity_id.split('.')[1] %}
+        {{ parts.replace('hvac_toggle_', '')
+                .replace('hvac_boost_', '')
+                .replace('hvac_set_target_temperature_', '')
+                .replace('_damper', '') }}
+      
+      # Centralized room configurations
+      room_configs:
+        bathroom:
+          climate: climate.bathroom
+          toggle: input_boolean.hvac_toggle_bathroom
+          damper: cover.bathroom_damper
+          target_temp: input_number.hvac_set_target_temperature_bathroom
+          boost: input_boolean.hvac_boost_bathroom
+          name: Bathroom
+        guest:
+          climate: climate.guest
+          toggle: input_boolean.hvac_toggle_guest
+          damper: cover.guest_damper
+          target_temp: input_number.hvac_set_target_temperature_guest
+          boost: input_boolean.hvac_boost_guest
+          name: Guest
+        hobby:
+          climate: climate.hobby
+          toggle: input_boolean.hvac_toggle_hobby
+          damper: cover.hobby_damper
+          target_temp: input_number.hvac_set_target_temperature_hobby
+          boost: input_boolean.hvac_boost_hobby
+          name: Hobby
+        kitchen:
+          climate: climate.kitchen
+          toggle: input_boolean.hvac_toggle_kitchen
+          damper: cover.kitchen_damper
+          target_temp: input_number.hvac_set_target_temperature_kitchen
+          boost: input_boolean.hvac_boost_kitchen
+          name: Kitchen
+        lounge_kitch:
+          climate: climate.lounge_kitch
+          toggle: input_boolean.hvac_toggle_lounge_kitch
+          damper: cover.lounge_kitch_damper
+          target_temp: input_number.hvac_set_target_temperature_lounge_kitch
+          boost: input_boolean.hvac_boost_lounge_kitch
+          name: Lounge Kitch
+        lounge_yard:
+          climate: climate.lounge_yard
+          toggle: input_boolean.hvac_toggle_lounge_yard
+          damper: cover.lounge_yard_damper
+          target_temp: input_number.hvac_set_target_temperature_lounge_yard
+          boost: input_boolean.hvac_boost_lounge_yard
+          name: Lounge Yard
+        master:
+          climate: climate.master
+          toggle: input_boolean.hvac_toggle_master
+          damper: cover.master_damper
+          target_temp: input_number.hvac_set_target_temperature_master
+          boost: input_boolean.hvac_boost_master
+          name: Master
+        office:
+          climate: climate.office
+          toggle: input_boolean.hvac_toggle_office
+          damper: cover.office_damper
+          target_temp: input_number.hvac_set_target_temperature_office
+          boost: input_boolean.hvac_boost_office
+          name: Office
+  - stop:
+    response_variable: room_configs[room_name]
+  mode: parallel
+  max: 20
+
+# ============================================================================
+# DAMPER CONTROL
+# ============================================================================
+hvac_room_set_damper:
+  alias: HVAC - Room - Set Damper
+  description: Open damper for a single room when HVAC is active. Spill zone dampers stay open when room toggle is off.
+  fields:
+    room_name:
+      description: Name of the room
+      example: bathroom
+    damper_entity:
+      description: Damper cover entity ID
+      example: cover.bathroom_damper
+    climate_entity:
+      description: Climate entity ID
+      example: climate.bathroom
+    toggle_entity:
+      description: HVAC toggle input boolean entity
+      example: input_boolean.hvac_toggle_bathroom
+  sequence:
+  # Safety check - skip if entities are unavailable
+  - condition: template
+    value_template: >
+      {{ states(climate_entity) not in ['unknown', 'unavailable'] 
+         and states(toggle_entity) not in ['unknown', 'unavailable'] }}
+  
+  - variables:
+      hvac_state: '{{ states(climate_entity) }}'
+      toggle_state: '{{ states(toggle_entity) }}'
+      damper_position: '{{ state_attr(damper_entity, ''current_position'') | int(0) }}'
+      spill_zones: '{{ states(''input_text.hvac_spill_zone_list'').split('','') | map(''trim'') | list }}'
+      is_spill_zone: '{{ room_name in spill_zones }}'
+      main_unit_on: '{{ is_state(''input_boolean.hvac_main_unit_turn_on'', ''on'') }}'
+      climate_is_running: '{{ hvac_state in [''fan_only'', ''cool'', ''heat'', ''auto'', ''dry''] }}'
+      
+      # Decision logic
+      damper_should_be_open: '{{ (is_spill_zone and main_unit_on) or (toggle_state == ''on'' and climate_is_running) }}'
+      damper_is_open: '{{ damper_position >= 90 }}'
+      damper_is_closed: '{{ damper_position <= 10 }}'
+  
+  - choose:
+    # Open damper if it should be open but isn't
+    - conditions:
+      - condition: template
+        value_template: '{{ damper_should_be_open and not damper_is_open }}'
+      sequence:
+      - action: cover.set_cover_position
+        target:
+          entity_id: '{{ damper_entity }}'
+        data:
+          position: 100
+      - action: logbook.log
+        data:
+          name: HVAC - {{ room_name | title }}
+          message: >
+            Damper opened - spill: {{ is_spill_zone }}, main: {{ main_unit_on }}, 
+            toggle: {{ toggle_state }}, climate: {{ hvac_state }}
+    
+    # Close damper if it should be closed but isn't
+    - conditions:
+      - condition: template
+        value_template: '{{ not damper_should_be_open and not damper_is_closed }}'
+      sequence:
+      - action: cover.set_cover_position
+        target:
+          entity_id: '{{ damper_entity }}'
+        data:
+          position: 0
+      - action: logbook.log
+        data:
+          name: HVAC - {{ room_name | title }}
+          message: 'Damper closed - toggle: {{ toggle_state }}, climate: {{ hvac_state }}'
+    
+    # No action needed - damper is already in correct position
+    default:
+    - action: logbook.log
+      data:
+        name: HVAC - {{ room_name | title }}
+        message: >
+          Damper unchanged - should_open: {{ damper_should_be_open }}, 
+          is_open: {{ damper_is_open }}, pos: {{ damper_position }}%
+  mode: queued
+  max: 10
+
+# ============================================================================
+# TEMPERATURE CONTROL (REFACTORED)
+# ============================================================================
+hvac_room_set_temperature_2:
+  alias: HVAC - Room - Set Temperature
+  description: Control HVAC for a single room based on temperature
+  fields:
+    room_name:
+      description: Name of the room
+      example: bathroom
+    climate_entity:
+      description: Climate entity ID
+      example: climate.bathroom
+    target_temp_entity:
+      description: Target temperature input number entity
+      example: input_number.hvac_set_target_temperature_bathroom
+  sequence:
+  # Safety check
+  - condition: template
+    value_template: >
+      {{ states(climate_entity) not in ['unknown', 'unavailable'] 
+         and states(target_temp_entity) not in ['unknown', 'unavailable'] }}
+  
+  - variables:
+      target_temp: '{{ states(target_temp_entity) | float(20) }}'
+      current_temp: '{{ state_attr(climate_entity, ''current_temperature'') | float(20) }}'
+      temp_difference: '{{ (current_temp - target_temp) | abs }}'
+      system_mode: '{{ states(''input_select.hvac_main_unit_set_mode'') | lower }}'
+      hvac_state: '{{ states(climate_entity) }}'
+      system_enabled: '{{ is_state(''input_boolean.hvac_main_unit_turn_on'', ''on'') }}'
+      
+      # Derive toggle entity from room name
+      toggle_entity: input_boolean.hvac_toggle_{{ room_name }}
+      toggle_is_on: '{{ is_state(toggle_entity, ''on'') }}'
+      
+      # Decision logic - when to turn ON
+      needs_cooling: '{{ system_mode == "cool" and current_temp > target_temp }}'
+      needs_heating: '{{ system_mode == "heat" and current_temp < target_temp }}'
+      temp_deviation_sufficient: '{{ temp_difference >= 0.5 }}'
+      should_turn_on: '{{ system_enabled and toggle_is_on and (needs_cooling or needs_heating) and temp_deviation_sufficient and hvac_state == "off" }}'
+      
+      # Decision logic - when to turn OFF
+      cooling_satisfied: '{{ system_mode == "cool" and current_temp <= target_temp }}'
+      heating_satisfied: '{{ system_mode == "heat" and current_temp >= target_temp }}'
+      wrong_mode_cooling: '{{ system_mode == "cool" and current_temp < target_temp }}'
+      wrong_mode_heating: '{{ system_mode == "heat" and current_temp > target_temp }}'
+      should_turn_off: '{{ (cooling_satisfied or heating_satisfied or wrong_mode_cooling or wrong_mode_heating) and hvac_state != "off" }}'
+  
+  - choose:
+    # Turn ON when needed - BUT ONLY if toggle is actually ON
+    - conditions:
+      - condition: template
+        value_template: '{{ should_turn_on }}'
+      - condition: template
+        value_template: '{{ states(toggle_entity) == ''on'' }}'
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: '{{ climate_entity }}'
+        data:
+          hvac_mode: fan_only
+      - action: logbook.log
+        data:
+          name: HVAC - {{ room_name | title }}
+          message: >
+            Turned on - {{ system_mode }} mode, Δ{{ temp_difference | round(1) }}°C 
+            (target: {{ target_temp }}°C, current: {{ current_temp }}°C)
+    
+    # Turn OFF when needed
+    - conditions:
+      - condition: template
+        value_template: '{{ should_turn_off }}'
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: '{{ climate_entity }}'
+        data:
+          hvac_mode: 'off'
+      - action: logbook.log
+        data:
+          name: HVAC - {{ room_name | title }}
+          message: >
+            Turned off - 
+            {% if cooling_satisfied or heating_satisfied %}target reached
+            {% elif wrong_mode_cooling or wrong_mode_heating %}wrong mode
+            {% else %}unknown reason{% endif %}
+            (target: {{ target_temp }}°C, current: {{ current_temp }}°C)
+  mode: queued
+  max: 10
+
+# ============================================================================
+# BATCH PROCESSING SCRIPTS
+# ============================================================================
+hvac_process_all_rooms:
+  alias: HVAC - Process All Rooms
+  description: Process temperature control for all rooms with toggles ON
+  sequence:
+  - variables:
+      rooms: '{{ states(''input_text.hvac_room_list'').split('','') }}'
+  - repeat:
+      for_each: '{{ rooms }}'
+      sequence:
+      - variables:
+          room: '{{ repeat.item | trim }}'
+          climate_entity: climate.{{ room }}
+          toggle_entity: input_boolean.hvac_toggle_{{ room }}
+          target_entity: input_number.hvac_set_target_temperature_{{ room }}
+      - condition: template
+        value_template: '{{ states(toggle_entity) == ''on'' }}'
+      - action: script.hvac_room_set_temperature_2
+        data:
+          room_name: '{{ room }}'
+          climate_entity: '{{ climate_entity }}'
+          target_temp_entity: '{{ target_entity }}'
+  mode: restart
+
+hvac_process_all_dampers:
+  alias: HVAC - Process All Dampers
+  description: Process damper positions for all rooms
+  sequence:
+  - variables:
+      rooms: '{{ states(''input_text.hvac_room_list'').split('','') }}'
+  - repeat:
+      for_each: '{{ rooms }}'
+      sequence:
+      - variables:
+          room: '{{ repeat.item | trim }}'
+          climate_entity: climate.{{ room }}
+          toggle_entity: input_boolean.hvac_toggle_{{ room }}
+          damper_entity: cover.{{ room }}_damper
+      - action: script.hvac_room_set_damper
+        data:
+          room_name: '{{ room }}'
+          climate_entity: '{{ climate_entity }}'
+          toggle_entity: '{{ toggle_entity }}'
+          damper_entity: '{{ damper_entity }}'
+  mode: restart
+
+# ============================================================================
+# SYNC SCRIPTS
+# ============================================================================
+hvac_sync_climate_to_helper:
+  alias: HVAC - Sync Climate to Helper
+  description: Sync a single climate device temperature to its helper
+  fields:
+    climate_entity:
+      description: Climate entity ID
+      example: climate.bathroom
+    target_helper:
+      description: Target helper entity ID
+      example: input_number.hvac_set_target_temperature_bathroom
+  sequence:
+  - variables:
+      new_temp: "{{ state_attr(climate_entity, 'temperature') | float(20) }}"
+  - action: input_number.set_value
+    target:
+      entity_id: "{{ target_helper }}"
+    data:
+      value: "{{ new_temp }}"
+  - action: logbook.log
+    data:
+      name: HVAC Sync
+      message: "Synced {{ climate_entity }} temperature {{ new_temp }}°C to {{ target_helper }}"
+  mode: queued
+  max: 10
+
+hvac_sync_helper_to_climate:
+  alias: HVAC - Sync Helper to Climate
+  description: Sync a single helper temperature to its climate device
+  fields:
+    target_temp_entity:
+      description: Target temperature helper entity ID
+      example: input_number.hvac_set_target_temperature_bathroom
+    climate_entity:
+      description: Climate entity ID
+      example: climate.bathroom
+    room_name:
+      description: Room name for logging
+      example: Bathroom
+  sequence:
+  - variables:
+      target_temp: '{{ states(target_temp_entity) | float(20) }}'
+  - action: climate.set_temperature
+    target:
+      entity_id: '{{ climate_entity }}'
+    data:
+      temperature: '{{ target_temp }}'
+  - action: logbook.log
+    data:
+      name: HVAC - {{ room_name }}
+      message: HVAC - {{ room_name }} temperature set to {{ target_temp }}°C
+  mode: restart
+
+# ============================================================================
+# UTILITY SCRIPTS
+# ============================================================================
+hvac_all_rooms_set_same_target_temperature:
+  alias: HVAC - All Rooms - Set Same Target Temperature
+  description: Set all rooms to the target temperature from input_number.hvac_all_rooms_updated_target_temperature
+  sequence:
+  - variables:
+      rooms: '{{ states(''input_text.hvac_room_list'').split('','') }}'
+      target_temp: '{{ states(''input_number.hvac_all_rooms_updated_target_temperature'') | float(20) }}'
+  - repeat:
+      for_each: '{{ rooms }}'
+      sequence:
+      - variables:
+          room: '{{ repeat.item | trim }}'
+          temp_helper: input_number.hvac_set_target_temperature_{{ room }}
+      - action: input_number.set_value
+        target:
+          entity_id: '{{ temp_helper }}'
+        data:
+          value: '{{ target_temp }}'
+  - action: logbook.log
+    data:
+      name: HVAC Automation
+      message: Set all rooms to {{ target_temp }}°C
+  mode: single
