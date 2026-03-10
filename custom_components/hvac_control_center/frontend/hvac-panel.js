@@ -1,12 +1,12 @@
 /**
  * HVAC Control Center - Home Assistant custom panel
- * Reads config from sensor.hvac_control_config; saves via hvac_control.set_config. No configuration.yaml required.
+ * Reads config from sensor.hvac_control_center_config; saves via hvac_control_center.set_config. No configuration.yaml required.
  */
 
-const CONFIG_ENTITY = 'sensor.hvac_control_config';
+const CONFIG_ENTITY = 'sensor.hvac_control_center_config';
 const MAIN_UNIT_TOGGLE = 'input_boolean.hvac_main_unit_turn_on';
 const MAIN_MODE = 'input_select.hvac_main_unit_set_mode';
-const DOMAIN = 'hvac_control';
+const DOMAIN = 'hvac_control_center';
 const DEFAULT_ROOMS = 'bathroom,guest,hobby,kitchen,lounge_kitch,lounge_yard,master,office';
 const DEFAULT_SPILL = 'kitchen';
 

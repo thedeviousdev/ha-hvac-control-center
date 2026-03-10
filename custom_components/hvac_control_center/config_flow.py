@@ -1,16 +1,15 @@
-"""Config flow for HVAC Control."""
+"""Config flow for HVAC Control Center."""
 
 from __future__ import annotations
 
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
-from . import DOMAIN
+from .const import DOMAIN
 
 DEFAULT_ROOMS = "bathroom,guest,hobby,kitchen,lounge_kitch,lounge_yard,master,office"
 DEFAULT_SPILL = "kitchen"
@@ -29,7 +28,7 @@ async def validate_input(_hass: HomeAssistant, data: dict[str, Any]) -> dict[str
 
 
 class HvacControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for HVAC Control."""
+    """Handle a config flow for HVAC Control Center."""
 
     VERSION = 1
 
@@ -39,20 +38,30 @@ class HvacControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 validated = await validate_input(self.hass, user_input)
-                return self.async_create_entry(title="HVAC Control", data={}, options=validated)
+                return self.async_create_entry(
+                    title="HVAC Control Center", data={}, options=validated
+                )
             except (ValueError, KeyError):
                 errors["base"] = "invalid_values"
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Optional("room_list", default=DEFAULT_ROOMS): cv.string,
-                vol.Optional("spill_zones", default=DEFAULT_SPILL): cv.string,
-                vol.Optional("temp_dead_band", default=DEFAULT_TEMP_DEAD_BAND): vol.Coerce(float),
-                vol.Optional("sync_tolerance", default=DEFAULT_SYNC_TOLERANCE): vol.Coerce(float),
-            }),
+            data_schema=vol.Schema(
+                {
+                    vol.Optional("room_list", default=DEFAULT_ROOMS): cv.string,
+                    vol.Optional("spill_zones", default=DEFAULT_SPILL): cv.string,
+                    vol.Optional(
+                        "temp_dead_band", default=DEFAULT_TEMP_DEAD_BAND
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        "sync_tolerance", default=DEFAULT_SYNC_TOLERANCE
+                    ): vol.Coerce(float),
+                }
+            ),
             errors=errors,
-            description_placeholders={"msg": "You can change these later in the HVAC panel."},
+            description_placeholders={
+                "msg": "You can change these later in the HVAC panel."
+            },
         )
 
     @staticmethod
@@ -63,7 +72,7 @@ class HvacControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class HvacControlOptionsFlow(config_entries.OptionsFlow):
-    """Handle HVAC Control options."""
+    """Handle HVAC Control Center options."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         self.config_entry = config_entry
@@ -76,10 +85,22 @@ class HvacControlOptionsFlow(config_entries.OptionsFlow):
         opts = self.config_entry.options or {}
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Optional("room_list", default=opts.get("room_list", DEFAULT_ROOMS)): cv.string,
-                vol.Optional("spill_zones", default=opts.get("spill_zones", DEFAULT_SPILL)): cv.string,
-                vol.Optional("temp_dead_band", default=opts.get("temp_dead_band", DEFAULT_TEMP_DEAD_BAND)): vol.Coerce(float),
-                vol.Optional("sync_tolerance", default=opts.get("sync_tolerance", DEFAULT_SYNC_TOLERANCE)): vol.Coerce(float),
-            }),
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        "room_list", default=opts.get("room_list", DEFAULT_ROOMS)
+                    ): cv.string,
+                    vol.Optional(
+                        "spill_zones", default=opts.get("spill_zones", DEFAULT_SPILL)
+                    ): cv.string,
+                    vol.Optional(
+                        "temp_dead_band",
+                        default=opts.get("temp_dead_band", DEFAULT_TEMP_DEAD_BAND),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        "sync_tolerance",
+                        default=opts.get("sync_tolerance", DEFAULT_SYNC_TOLERANCE),
+                    ): vol.Coerce(float),
+                }
+            ),
         )

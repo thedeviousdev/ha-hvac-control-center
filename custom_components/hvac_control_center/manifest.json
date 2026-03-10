@@ -1,6 +1,6 @@
 {
-  "domain": "hvac_control",
-  "name": "HVAC Control",
+  "domain": "hvac_control_center",
+  "name": "HVAC Control Center",
   "version": "1.0.0",
   "codeowners": [],
   "config_flow": true,

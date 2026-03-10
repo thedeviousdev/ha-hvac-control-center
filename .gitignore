@@ -1,0 +1,10 @@
+.DS_Store
+.venv
+.venv/
+.venv*/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
