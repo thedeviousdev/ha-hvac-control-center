@@ -8,13 +8,13 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import DOMAIN
 from .config_flow import (
     DEFAULT_ROOMS,
     DEFAULT_SPILL,
     DEFAULT_SYNC_TOLERANCE,
     DEFAULT_TEMP_DEAD_BAND,
 )
+from .const import DOMAIN
 
 CONFIG_SENSOR_ID = "hvac_control_center_config"
 

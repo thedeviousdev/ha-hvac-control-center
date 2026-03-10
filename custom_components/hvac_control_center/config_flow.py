@@ -9,7 +9,7 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
-from . import DOMAIN
+from .const import DOMAIN
 
 DEFAULT_ROOMS = "bathroom,guest,hobby,kitchen,lounge_kitch,lounge_yard,master,office"
 DEFAULT_SPILL = "kitchen"

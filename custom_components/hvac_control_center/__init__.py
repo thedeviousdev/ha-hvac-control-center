@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from homeassistant.components import frontend
-from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -18,10 +17,9 @@ from .config_flow import (
     DEFAULT_SYNC_TOLERANCE,
     DEFAULT_TEMP_DEAD_BAND,
 )
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
-DOMAIN = "hvac_control_center"
 
 MAIN_UNIT_TOGGLE = "input_boolean.hvac_main_unit_turn_on"
 MAIN_MODE = "input_select.hvac_main_unit_set_mode"
@@ -412,14 +410,30 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     frontend_path = Path(__file__).parent / FRONTEND_DIR
     if frontend_path.is_dir():
         try:
-            await hass.http.async_register_static_paths(
-                [
-                    StaticPathConfig(
-                        "/hac_static/hvac_control_center", frontend_path, False
-                    )
-                ]
+            # Newer Home Assistant: async_register_static_paths + StaticPathConfig
+            from homeassistant.components.http import (  # type: ignore[import-not-found]
+                StaticPathConfig,
             )
-        except Exception as e:
+
+            register = getattr(hass.http, "async_register_static_paths", None)
+            if register is not None:
+                await register(
+                    [
+                        StaticPathConfig(
+                            "/hac_static/hvac_control_center",
+                            frontend_path,
+                            False,
+                        )
+                    ]
+                )
+            else:
+                # Older Home Assistant: synchronous register_static_path
+                hass.http.register_static_path(
+                    "/hac_static/hvac_control_center",
+                    str(frontend_path),
+                    cache=True,
+                )
+        except Exception as e:  # pragma: no cover - defensive, logged for debugging
             _LOGGER.warning("Could not register static path for HVAC panel: %s", e)
 
     # Register the panel
