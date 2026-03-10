@@ -12,7 +12,7 @@
         { "type": "docs", "section": "Documentation" }
       ],
       "extra-files": [
-        "custom_components/hvac_control/manifest.json"
+        "custom_components/hvac_control_center/manifest.json"
       ]
     }
   }

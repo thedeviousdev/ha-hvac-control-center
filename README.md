@@ -361,13 +361,13 @@ input_select.hvac_main_unit_set_mode
 
 ---
 
-## HVAC Control Plugin (no YAML scripts)
+## HVAC Control Center (no YAML scripts)
 
-All HVAC logic lives in the **HVAC Control** plugin. There are no HVAC scripts in `scripts.yaml`; automations call the integration's services instead.
+All HVAC logic lives in the **HVAC Control Center** integration. Automations call the integration's services; no `scripts.yaml` or `automations.yaml` required.
 
 ### What it is
-- **Custom integration** (`custom_components/hvac_control`): Python code that implements damper, temperature, batch, sync, diagnose, set-all, and config. Exposes services under the `hvac_control` domain. Stores room list, spill zones, and tolerances in the config entry (no `configuration.yaml` required).
-- **Custom panel**: Served from the integration at `/hac_static/hvac_control/hvac-panel.js`. Reads config from `sensor.hvac_control_config` and saves via `hvac_control.set_config`. No dashboard cards required.
+- **Custom integration** (`custom_components/hvac_control_center`): Python code that implements damper, temperature, batch, sync, diagnose, set-all, and config. Exposes services under the `hvac_control_center` domain. Stores room list, spill zones, and tolerances in the config entry (no `configuration.yaml` required).
+- **Custom panel**: Served from the integration at `/hac_static/hvac_control_center/hvac-panel.js`. Reads config from `sensor.hvac_control_center_config` and saves via `hvac_control_center.set_config`. Sidebar: **HVAC Control Center**. No dashboard cards required.
 
 ### Install
 
@@ -376,19 +376,19 @@ All HVAC logic lives in the **HVAC Control** plugin. There are no HVAC scripts i
 2. Push this repo to GitHub (or use your existing fork).  
 3. In Home Assistant: **HACS → Integrations → ⋮ (top right) → Custom repositories**.  
 4. Add your repo URL (e.g. `https://github.com/yourusername/ha-hvac-control-center`), set **Category** to **Integration**, then **Add**.  
-5. In **HACS → Integrations**, search for **HVAC Control**, then **Download**.  
-6. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control**.
+5. In **HACS → Integrations**, search for **HVAC Control Center**, then **Download**.
+6. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control Center**.
 
 **Option B – Manual**  
-1. Copy the whole **`custom_components/hvac_control/`** folder (including **`frontend/`**) into your Home Assistant **config** directory.  
-2. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control**.  
-3. The **HVAC** entry appears in the sidebar (thermostat icon). No `panel_custom`, `input_text`, or `input_number` entries are needed in `configuration.yaml`.
+1. Copy the whole **`custom_components/hvac_control_center/`** folder (including **`frontend/`**) into your Home Assistant **config** directory.  
+2. Restart Home Assistant, then **Settings → Devices & services → Add Integration** and add **HVAC Control Center**.
+3. The **HVAC Control Center** entry appears in the sidebar (thermostat icon). No `panel_custom`, `input_text`, or `input_number` entries are needed in `configuration.yaml`.
 
 ### Configurable in the panel
-- **Rooms**: Editable room list and spill zone list (comma-separated). Saved via `hvac_control.set_config` (stored in the integration config entry).
+- **Rooms**: Editable room list and spill zone list (comma-separated). Saved via `hvac_control_center.set_config` (stored in the integration config entry).
 - **Tolerances**: Temp dead band (°C) and sync tolerance (°C), also saved via `set_config`. Defaults: 0.5°C and 0.1°C. Damper open/closed (90%/10%) are fixed in the integration.
 
-### Integration services (`hvac_control` domain)
+### Integration services (`hvac_control_center` domain)
 | Service | Parameters | Description |
 |--------|------------|-------------|
 | `process_room_damper` | `room_name` | Run damper logic for one room (open/close by spill zone, toggle, climate). |
@@ -426,4 +426,4 @@ You're building a **smart HVAC coordinator** that:
 
 **The goal**: Make your physical HVAC system operate intelligently while maintaining system integrity and user control.
 
-**Current status**: HVAC logic moved into the HVAC Control plugin (custom integration + sidebar panel). No YAML scripts; automations call `hvac_control.*` services.
+**Current status**: HVAC logic in the HVAC Control Center integration (custom integration + sidebar panel). No YAML scripts or automations; use `hvac_control_center.*` services from your own automations or the panel.

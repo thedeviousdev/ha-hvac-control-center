@@ -1,4 +1,4 @@
-# Service definitions for hvac_control integration
+# Service definitions for HVAC Control Center integration
 
 process_room_damper:
   fields:

@@ -1,4 +1,4 @@
-"""HVAC Control integration - all logic in one place, no YAML scripts."""
+"""HVAC Control Center integration - all logic in one place, no YAML scripts."""
 
 from __future__ import annotations
 
@@ -12,11 +12,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .config_flow import DEFAULT_ROOMS, DEFAULT_SPILL, DEFAULT_SYNC_TOLERANCE, DEFAULT_TEMP_DEAD_BAND
+from .config_flow import (
+    DEFAULT_ROOMS,
+    DEFAULT_SPILL,
+    DEFAULT_SYNC_TOLERANCE,
+    DEFAULT_TEMP_DEAD_BAND,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "hvac_control"
+DOMAIN = "hvac_control_center"
 
 MAIN_UNIT_TOGGLE = "input_boolean.hvac_main_unit_turn_on"
 MAIN_MODE = "input_select.hvac_main_unit_set_mode"
@@ -25,8 +30,8 @@ DAMPER_OPEN_PCT = 90
 DAMPER_CLOSED_PCT = 10
 CLIMATE_RUNNING_STATES = ("fan_only", "cool", "heat", "auto", "dry")
 
-PANEL_URL_PATH = "hvac"
-PANEL_MODULE_URL = "/hac_static/hvac_control/hvac-panel.js"
+PANEL_URL_PATH = "hvac-control-center"
+PANEL_MODULE_URL = "/hac_static/hvac_control_center/hvac-panel.js"
 FRONTEND_DIR = "frontend"
 
 
@@ -47,7 +52,16 @@ def _get_rooms(hass: HomeAssistant) -> list[str]:
     opts = _get_options(hass)
     s = (opts.get("room_list") or DEFAULT_ROOMS).strip()
     if not s:
-        return ["bathroom", "guest", "hobby", "kitchen", "lounge_kitch", "lounge_yard", "master", "office"]
+        return [
+            "bathroom",
+            "guest",
+            "hobby",
+            "kitchen",
+            "lounge_kitch",
+            "lounge_yard",
+            "master",
+            "office",
+        ]
     return [r.strip() for r in s.split(",") if r.strip()]
 
 
@@ -126,7 +140,9 @@ async def _process_room_damper(hass: HomeAssistant, room_name: str) -> None:
     is_closed = position <= DAMPER_CLOSED_PCT
 
     if should_be_open and not is_open:
-        await hass.services.async_call("cover", "set_cover_position", {"entity_id": damper_entity, "position": 100})
+        await hass.services.async_call(
+            "cover", "set_cover_position", {"entity_id": damper_entity, "position": 100}
+        )
         await hass.services.async_call(
             "logbook",
             "log",
@@ -136,7 +152,9 @@ async def _process_room_damper(hass: HomeAssistant, room_name: str) -> None:
             },
         )
     elif not should_be_open and not is_closed:
-        await hass.services.async_call("cover", "set_cover_position", {"entity_id": damper_entity, "position": 0})
+        await hass.services.async_call(
+            "cover", "set_cover_position", {"entity_id": damper_entity, "position": 0}
+        )
         await hass.services.async_call(
             "logbook",
             "log",
@@ -193,12 +211,17 @@ async def _process_room_temperature(hass: HomeAssistant, room_name: str) -> None
     wrong_mode_cooling = system_mode == "cool" and current_temp < target_temp
     wrong_mode_heating = system_mode == "heat" and current_temp > target_temp
     should_turn_off = (
-        (cooling_satisfied or heating_satisfied or wrong_mode_cooling or wrong_mode_heating) and hvac_state != "off"
-    )
+        cooling_satisfied
+        or heating_satisfied
+        or wrong_mode_cooling
+        or wrong_mode_heating
+    ) and hvac_state != "off"
 
     if should_turn_on:
         await hass.services.async_call(
-            "climate", "set_hvac_mode", {"entity_id": climate_entity, "hvac_mode": "fan_only"}
+            "climate",
+            "set_hvac_mode",
+            {"entity_id": climate_entity, "hvac_mode": "fan_only"},
         )
         await hass.services.async_call(
             "logbook",
@@ -209,8 +232,16 @@ async def _process_room_temperature(hass: HomeAssistant, room_name: str) -> None
             },
         )
     elif should_turn_off:
-        await hass.services.async_call("climate", "set_hvac_mode", {"entity_id": climate_entity, "hvac_mode": "off"})
-        reason = "target reached" if (cooling_satisfied or heating_satisfied) else "wrong mode"
+        await hass.services.async_call(
+            "climate",
+            "set_hvac_mode",
+            {"entity_id": climate_entity, "hvac_mode": "off"},
+        )
+        reason = (
+            "target reached"
+            if (cooling_satisfied or heating_satisfied)
+            else "wrong mode"
+        )
         await hass.services.async_call(
             "logbook",
             "log",
@@ -222,7 +253,10 @@ async def _process_room_temperature(hass: HomeAssistant, room_name: str) -> None
 
 
 async def _sync_helper_to_climate(
-    hass: HomeAssistant, target_temp_entity: str, climate_entity: str, room_name: str | None = None
+    hass: HomeAssistant,
+    target_temp_entity: str,
+    climate_entity: str,
+    room_name: str | None = None,
 ) -> None:
     target_state = hass.states.get(target_temp_entity)
     if not target_state or target_state.state in ("unknown", "unavailable"):
@@ -232,17 +266,24 @@ async def _sync_helper_to_climate(
     except (TypeError, ValueError):
         return
     await hass.services.async_call(
-        "climate", "set_temperature", {"entity_id": climate_entity, "temperature": target_temp}
+        "climate",
+        "set_temperature",
+        {"entity_id": climate_entity, "temperature": target_temp},
     )
     name = (room_name or climate_entity.replace("climate.", "")).title()
     await hass.services.async_call(
         "logbook",
         "log",
-        {"name": f"HVAC - {name}", "message": f"HVAC - {name} temperature set to {target_temp}°C"},
+        {
+            "name": f"HVAC - {name}",
+            "message": f"HVAC - {name} temperature set to {target_temp}°C",
+        },
     )
 
 
-async def _sync_climate_to_helper(hass: HomeAssistant, climate_entity: str, target_helper: str) -> None:
+async def _sync_climate_to_helper(
+    hass: HomeAssistant, climate_entity: str, target_helper: str
+) -> None:
     climate_state = hass.states.get(climate_entity)
     helper_state = hass.states.get(target_helper)
     if not climate_state:
@@ -268,7 +309,10 @@ async def _sync_climate_to_helper(hass: HomeAssistant, climate_entity: str, targ
     await hass.services.async_call(
         "logbook",
         "log",
-        {"name": "HVAC Sync", "message": f"Synced {climate_entity} temperature {new_temp}°C to {target_helper}"},
+        {
+            "name": "HVAC Sync",
+            "message": f"Synced {climate_entity} temperature {new_temp}°C to {target_helper}",
+        },
     )
 
 
@@ -308,13 +352,19 @@ async def _diagnose_kitchen(hass: HomeAssistant) -> None:
     )
 
 
-async def _set_all_rooms_target_temperature(hass: HomeAssistant, temperature: float) -> None:
+async def _set_all_rooms_target_temperature(
+    hass: HomeAssistant, temperature: float
+) -> None:
     rooms = _get_rooms(hass)
     for room in rooms:
         helper = _target_temp_entity(room)
-        await hass.services.async_call("input_number", "set_value", {"entity_id": helper, "value": temperature})
+        await hass.services.async_call(
+            "input_number", "set_value", {"entity_id": helper, "value": temperature}
+        )
     await hass.services.async_call(
-        "logbook", "log", {"name": "HVAC Automation", "message": f"Set all rooms to {temperature}°C"}
+        "logbook",
+        "log",
+        {"name": "HVAC Automation", "message": f"Set all rooms to {temperature}°C"},
     )
 
 
@@ -324,12 +374,15 @@ async def _handle_boost(hass: HomeAssistant, room: str) -> None:
     await hass.services.async_call(
         "logbook",
         "log",
-        {"name": f"HVAC - {room.title()}", "message": f"Boost turned {'on' if boost_on else 'off'} for {room}"},
+        {
+            "name": f"HVAC - {room.title()}",
+            "message": f"Boost turned {'on' if boost_on else 'off'} for {room}",
+        },
     )
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Set up HVAC Control from a config entry."""
+    """Set up HVAC Control Center from a config entry."""
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
@@ -360,7 +413,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     if frontend_path.is_dir():
         try:
             await hass.http.async_register_static_paths(
-                [StaticPathConfig("/hac_static/hvac_control", frontend_path, False)]
+                [
+                    StaticPathConfig(
+                        "/hac_static/hvac_control_center", frontend_path, False
+                    )
+                ]
             )
         except Exception as e:
             _LOGGER.warning("Could not register static path for HVAC panel: %s", e)
@@ -370,12 +427,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         frontend.async_register_built_in_panel(
             hass,
             component_name="custom",
-            sidebar_title="HVAC",
+            sidebar_title="HVAC Control Center",
             sidebar_icon="mdi:thermostat",
             frontend_url_path=PANEL_URL_PATH,
             config={
                 "_panel_custom": {
-                    "name": "hvac-control",
+                    "name": "hvac-control-center",
                     "embed_iframe": False,
                     "trust_external": False,
                     "module_url": PANEL_MODULE_URL,
@@ -413,7 +470,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         climate_entity = call.data.get("climate_entity")
         room_name = call.data.get("room_name")
         if target_temp_entity and climate_entity:
-            await _sync_helper_to_climate(hass, target_temp_entity, climate_entity, room_name)
+            await _sync_helper_to_climate(
+                hass, target_temp_entity, climate_entity, room_name
+            )
 
     async def sync_climate_to_helper(call: ServiceCall) -> None:
         climate_entity = call.data.get("climate_entity")
@@ -461,13 +520,21 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         coordinator.async_set_updated_data({})
 
     hass.services.async_register(DOMAIN, "process_room_damper", process_room_damper)
-    hass.services.async_register(DOMAIN, "process_room_temperature", process_room_temperature)
+    hass.services.async_register(
+        DOMAIN, "process_room_temperature", process_room_temperature
+    )
     hass.services.async_register(DOMAIN, "process_all_rooms", process_all_rooms)
     hass.services.async_register(DOMAIN, "process_all_dampers", process_all_dampers)
-    hass.services.async_register(DOMAIN, "sync_helper_to_climate", sync_helper_to_climate)
-    hass.services.async_register(DOMAIN, "sync_climate_to_helper", sync_climate_to_helper)
+    hass.services.async_register(
+        DOMAIN, "sync_helper_to_climate", sync_helper_to_climate
+    )
+    hass.services.async_register(
+        DOMAIN, "sync_climate_to_helper", sync_climate_to_helper
+    )
     hass.services.async_register(DOMAIN, "diagnose_kitchen", diagnose_kitchen)
-    hass.services.async_register(DOMAIN, "set_all_rooms_target_temperature", set_all_rooms_target_temperature)
+    hass.services.async_register(
+        DOMAIN, "set_all_rooms_target_temperature", set_all_rooms_target_temperature
+    )
     hass.services.async_register(DOMAIN, "handle_boost", handle_boost)
     hass.services.async_register(DOMAIN, "set_config", set_config)
 
