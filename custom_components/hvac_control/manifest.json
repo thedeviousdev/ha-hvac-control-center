@@ -1,0 +1,8 @@
+{
+  "domain": "hvac_control",
+  "name": "HVAC Control",
+  "version": "1.0.0",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"]
+}
