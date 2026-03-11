@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/thedeviousdev/ha-hvac-control-center/compare/v1.0.2...v1.0.3) (2026-03-11)
+
+
+### Bug Fixes
+
+* drop frontend dependency so integration loads when frontend unav… ([#6](https://github.com/thedeviousdev/ha-hvac-control-center/issues/6)) ([1f512c2](https://github.com/thedeviousdev/ha-hvac-control-center/commit/1f512c2132aea513611357a7f075cacdeb7d3fd9))
+
 ## [1.0.2](https://github.com/thedeviousdev/ha-hvac-control-center/compare/v1.0.1...v1.0.2) (2026-03-10)
 
 
